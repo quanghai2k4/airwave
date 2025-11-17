@@ -4,6 +4,13 @@ using AirWave.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
+// Ensure logs directory exists
+var logsPath = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+if (!Directory.Exists(logsPath))
+{
+    Directory.CreateDirectory(logsPath);
+}
+
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()
