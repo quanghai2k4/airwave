@@ -14,6 +14,13 @@ if (!Directory.Exists(logsPath))
     Directory.CreateDirectory(logsPath);
 }
 
+// Ensure data directory exists in AirWave.Server
+var serverDataPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "AirWave.Server", "data");
+if (!Directory.Exists(serverDataPath))
+{
+    Directory.CreateDirectory(serverDataPath);
+}
+
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(new ConfigurationBuilder()

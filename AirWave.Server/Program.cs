@@ -4,11 +4,17 @@ using AirWave.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-// Ensure logs directory exists
+// Ensure logs and data directories exist
 var logsPath = Path.Combine(Directory.GetCurrentDirectory(), "logs");
 if (!Directory.Exists(logsPath))
 {
     Directory.CreateDirectory(logsPath);
+}
+
+var dataPath = Path.Combine(Directory.GetCurrentDirectory(), "data");
+if (!Directory.Exists(dataPath))
+{
+    Directory.CreateDirectory(dataPath);
 }
 
 // Configure Serilog
@@ -26,29 +32,34 @@ try
 {
     Log.Information("Starting AirWave Server...");
 
-var builder = Host.CreateApplicationBuilder(args);
+    var builder = Host.CreateApplicationBuilder(args);
 
-// Use Serilog
-builder.Services.AddSerilog();
+    // Use Serilog
+    builder.Services.AddSerilog();
 
-var dbSettings = builder.Configuration.GetSection("DatabaseSettings").Get<DatabaseSettings>() ?? new DatabaseSettings();
+    var dbSettings = builder.Configuration.GetSection("DatabaseSettings").Get<DatabaseSettings>() ?? new DatabaseSettings();
+    Log.Information("Database connection string: {ConnectionString}", dbSettings.ConnectionString);
 
-builder.Services.AddDbContext<AqiDbContext>(options =>
-    options.UseSqlite(dbSettings.ConnectionString));
+    builder.Services.AddDbContext<AqiDbContext>(options =>
+        options.UseSqlite(dbSettings.ConnectionString));
 
-builder.Services.Configure<MqttSettings>(builder.Configuration.GetSection("MqttSettings"));
+    builder.Services.Configure<MqttSettings>(builder.Configuration.GetSection("MqttSettings"));
 
-builder.Services.AddHostedService<Worker>();
+    builder.Services.AddHostedService<Worker>();
 
-var host = builder.Build();
+    Log.Information("Building host...");
+    var host = builder.Build();
 
-using (var scope = host.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<AqiDbContext>();
-    dbContext.Database.EnsureCreated();
-}
+    Log.Information("Ensuring database is created...");
+    using (var scope = host.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<AqiDbContext>();
+        dbContext.Database.EnsureCreated();
+        Log.Information("Database created successfully");
+    }
 
-host.Run();
+    Log.Information("Starting host...");
+    host.Run();
 }
 catch (Exception ex)
 {
