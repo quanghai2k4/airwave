@@ -41,7 +41,8 @@ try
     Log.Information("Database connection string: {ConnectionString}", dbSettings.ConnectionString);
 
     builder.Services.AddDbContext<AqiDbContext>(options =>
-        options.UseSqlite(dbSettings.ConnectionString));
+        options.UseSqlite(dbSettings.ConnectionString,
+            sqliteOptions => sqliteOptions.MigrationsAssembly("AirWave.Shared")));
 
     builder.Services.Configure<MqttSettings>(builder.Configuration.GetSection("MqttSettings"));
 
@@ -50,12 +51,12 @@ try
     Log.Information("Building host...");
     var host = builder.Build();
 
-    Log.Information("Ensuring database is created...");
+    Log.Information("Running database migrations...");
     using (var scope = host.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AqiDbContext>();
-        dbContext.Database.EnsureCreated();
-        Log.Information("Database created successfully");
+        dbContext.Database.Migrate();
+        Log.Information("Database migrations completed successfully");
     }
 
     Log.Information("Starting host...");

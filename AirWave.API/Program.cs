@@ -45,7 +45,7 @@ var dbSettings = builder.Configuration.GetSection("DatabaseSettings").Get<Databa
 
 builder.Services.AddDbContext<AqiDbContext>(options =>
     options.UseSqlite(dbSettings.ConnectionString, 
-        sqliteOptions => sqliteOptions.MigrationsAssembly("AirWave.API")));
+        sqliteOptions => sqliteOptions.MigrationsAssembly("AirWave.Shared")));
 
 // Add Health Checks
 builder.Services.AddHealthChecks()

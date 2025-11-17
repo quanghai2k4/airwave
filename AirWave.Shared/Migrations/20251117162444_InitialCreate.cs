@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace AirWave.API.Migrations
+namespace AirWave.Shared.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
