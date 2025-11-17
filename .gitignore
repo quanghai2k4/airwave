@@ -82,3 +82,6 @@ artifacts/
 ## Node.js (for Blazor Client)
 node_modules/
 package-lock.json
+
+## OpenCode
+AGENTS.md
