@@ -1,0 +1,6 @@
+@AirWave.API_HostAddress = http://localhost:5045
+
+GET {{AirWave.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

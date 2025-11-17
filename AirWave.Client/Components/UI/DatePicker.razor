@@ -1,0 +1,187 @@
+@using System.Globalization
+
+<div class="@ContainerClass">
+    <button type="button" @onclick="ToggleCalendar" class="inline-flex items-center justify-between w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <span class="@(SelectedDate.HasValue ? "text-gray-900" : "text-gray-500")">
+            @if (SelectedDate.HasValue)
+            {
+                @SelectedDate.Value.ToString(DisplayFormat, new CultureInfo("vi-VN"))
+            }
+            else
+            {
+                @Placeholder
+            }
+        </span>
+        <svg class="w-4 h-4 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+    </button>
+
+    @if (isOpen)
+    {
+        <div class="absolute z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[280px]">
+            <div class="flex items-center justify-between mb-4">
+                <button type="button" @onclick="PreviousMonth" class="p-1 hover:bg-gray-100 rounded">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <div class="text-sm font-semibold text-gray-900">
+                    Tháng @currentMonth.Month, @currentMonth.Year
+                </div>
+                <button type="button" @onclick="NextMonth" class="p-1 hover:bg-gray-100 rounded">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1 mb-2">
+                <div class="text-xs font-medium text-center text-gray-500 py-2">CN</div>
+                <div class="text-xs font-medium text-center text-gray-500 py-2">T2</div>
+                <div class="text-xs font-medium text-center text-gray-500 py-2">T3</div>
+                <div class="text-xs font-medium text-center text-gray-500 py-2">T4</div>
+                <div class="text-xs font-medium text-center text-gray-500 py-2">T5</div>
+                <div class="text-xs font-medium text-center text-gray-500 py-2">T6</div>
+                <div class="text-xs font-medium text-center text-gray-500 py-2">T7</div>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1">
+                @foreach (var day in GetCalendarDays())
+                {
+                    <button type="button" @onclick="() => SelectDate(day)" disabled="@(!day.IsCurrentMonth)" class="@GetDayClass(day)">
+                        @day.Date.Day
+                    </button>
+                }
+            </div>
+
+            @if (ShowTimePicker)
+            {
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center gap-2">
+                        <input type="number" min="0" max="23" @bind="selectedHour" class="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <span class="text-gray-500">:</span>
+                        <input type="number" min="0" max="59" @bind="selectedMinute" class="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                </div>
+            }
+
+            <div class="flex gap-2 mt-4 pt-4 border-t border-gray-200">
+                <button type="button" @onclick="Clear" class="flex-1 px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Xóa
+                </button>
+                <button type="button" @onclick="Apply" class="flex-1 px-3 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                    Áp dụng
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public DateTime? SelectedDate { get; set; }
+    [Parameter] public EventCallback<DateTime?> SelectedDateChanged { get; set; }
+    [Parameter] public bool ShowTimePicker { get; set; } = true;
+    [Parameter] public string Placeholder { get; set; } = "Chọn ngày...";
+    [Parameter] public string DisplayFormat { get; set; } = "dd/MM/yyyy HH:mm";
+    [Parameter] public string ContainerClass { get; set; } = "relative w-full";
+
+    private bool isOpen = false;
+    private DateTime currentMonth = DateTime.Now;
+    private int selectedHour = 0;
+    private int selectedMinute = 0;
+
+    protected override void OnParametersSet()
+    {
+        if (SelectedDate.HasValue)
+        {
+            currentMonth = new DateTime(SelectedDate.Value.Year, SelectedDate.Value.Month, 1);
+            selectedHour = SelectedDate.Value.Hour;
+            selectedMinute = SelectedDate.Value.Minute;
+        }
+        else
+        {
+            currentMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        }
+    }
+
+    private void ToggleCalendar()
+    {
+        isOpen = !isOpen;
+    }
+
+    private void PreviousMonth()
+    {
+        currentMonth = currentMonth.AddMonths(-1);
+    }
+
+    private void NextMonth()
+    {
+        currentMonth = currentMonth.AddMonths(1);
+    }
+
+    private async Task SelectDate(CalendarDay day)
+    {
+        if (!day.IsCurrentMonth) return;
+
+        var newDate = new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, selectedHour, selectedMinute, 0);
+        SelectedDate = newDate;
+        await SelectedDateChanged.InvokeAsync(SelectedDate);
+    }
+
+    private async Task Apply()
+    {
+        await SelectedDateChanged.InvokeAsync(SelectedDate);
+        isOpen = false;
+    }
+
+    private async Task Clear()
+    {
+        SelectedDate = null;
+        await SelectedDateChanged.InvokeAsync(null);
+        isOpen = false;
+    }
+
+    private List<CalendarDay> GetCalendarDays()
+    {
+        var days = new List<CalendarDay>();
+        var firstDay = new DateTime(currentMonth.Year, currentMonth.Month, 1);
+        var lastDay = firstDay.AddMonths(1).AddDays(-1);
+
+        var startDate = firstDay.AddDays(-(int)firstDay.DayOfWeek);
+
+        for (int i = 0; i < 42; i++)
+        {
+            var date = startDate.AddDays(i);
+            days.Add(new CalendarDay
+            {
+                Date = date,
+                IsCurrentMonth = date.Month == currentMonth.Month
+            });
+        }
+
+        return days;
+    }
+
+    private string GetDayClass(CalendarDay day)
+    {
+        var baseClass = "h-8 text-sm rounded hover:bg-blue-50 transition-colors";
+
+        if (!day.IsCurrentMonth)
+            return $"{baseClass} text-gray-300 cursor-not-allowed";
+
+        if (SelectedDate.HasValue && day.Date.Date == SelectedDate.Value.Date)
+            return $"{baseClass} bg-blue-600 text-white hover:bg-blue-700";
+
+        if (day.Date.Date == DateTime.Now.Date)
+            return $"{baseClass} bg-gray-100 text-gray-900 font-semibold";
+
+        return $"{baseClass} text-gray-700";
+    }
+
+    private class CalendarDay
+    {
+        public DateTime Date { get; set; }
+        public bool IsCurrentMonth { get; set; }
+    }
+}

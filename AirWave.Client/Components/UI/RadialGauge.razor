@@ -1,0 +1,136 @@
+@if (Value.HasValue)
+{
+    <div class="relative flex items-center justify-center" style="height: @(Height)px">
+        <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-lg">
+            <defs>
+                <linearGradient id="gradient-@Id" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:@GaugeColor;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:@GaugeColorEnd;stop-opacity:1" />
+                </linearGradient>
+                <filter id="glow-@Id">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            
+            <circle 
+                cx="100" 
+                cy="100" 
+                r="85" 
+                fill="none" 
+                stroke="#f0f0f0" 
+                stroke-width="12"
+                transform="rotate(-90 100 100)"
+                stroke-dasharray="@TrackLength 1000"
+                stroke-linecap="round" />
+            
+            <circle 
+                cx="100" 
+                cy="100" 
+                r="85" 
+                fill="none" 
+                stroke="url(#gradient-@Id)" 
+                stroke-width="12"
+                transform="rotate(-90 100 100)"
+                stroke-dasharray="@FilledLength @TrackLength"
+                stroke-linecap="round"
+                filter="url(#glow-@Id)"
+                class="transition-all duration-1000 ease-out" />
+        </svg>
+        
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <p class="text-6xl font-extrabold transition-all duration-300" style="color: @GaugeColor">@Value</p>
+            <div class="mt-4 px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all duration-300" style="background-color: @GaugeColor">
+                @StatusText
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="relative flex items-center justify-center" style="height: @(Height)px">
+        <svg viewBox="0 0 200 200" class="w-full h-full">
+            <circle 
+                cx="100" 
+                cy="100" 
+                r="85" 
+                fill="none" 
+                stroke="#f0f0f0" 
+                stroke-width="12"
+                transform="rotate(-90 100 100)"
+                stroke-dasharray="@TrackLength 1000"
+                stroke-linecap="round" />
+        </svg>
+        
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <div class="w-16 h-16 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+            <p class="text-sm font-medium text-gray-500 mt-4">Đang chờ dữ liệu</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int? Value { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public int Height { get; set; } = 280;
+    [Parameter] public int MaxValue { get; set; } = 300;
+    
+    private string Id = Guid.NewGuid().ToString("N")[..8];
+    
+    private double Percentage => Value.HasValue ? Math.Min((double)Value.Value / MaxValue * 100, 100) : 0;
+    
+    private double TrackLength => Math.PI * 170;
+    
+    private double FilledLength => TrackLength * (Percentage / 100.0);
+    
+    private string GaugeColor
+    {
+        get
+        {
+            if (!Value.HasValue) return "#9ca3af";
+            
+            return Value.Value switch
+            {
+                <= 50 => "#10b981",
+                <= 100 => "#f59e0b", 
+                <= 150 => "#f97316",
+                _ => "#ef4444"
+            };
+        }
+    }
+    
+    private string GaugeColorEnd
+    {
+        get
+        {
+            if (!Value.HasValue) return "#6b7280";
+            
+            return Value.Value switch
+            {
+                <= 50 => "#059669",
+                <= 100 => "#d97706", 
+                <= 150 => "#ea580c",
+                _ => "#dc2626"
+            };
+        }
+    }
+    
+    private string StatusText
+    {
+        get
+        {
+            if (!Value.HasValue) return "Không có dữ liệu";
+            
+            return Value.Value switch
+            {
+                <= 50 => "TỐT",
+                <= 100 => "TRUNG BÌNH", 
+                <= 150 => "KÉM",
+                _ => "NGUY HIỂM"
+            };
+        }
+    }
+}

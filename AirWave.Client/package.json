@@ -1,0 +1,11 @@
+{
+  "name": "airwave-client",
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -i ./Styles/app.css -o ./wwwroot/app.css --minify"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.1",
+    "tailwindcss": "^3.4.1"
+  }
+}

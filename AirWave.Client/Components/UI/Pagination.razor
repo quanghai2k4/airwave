@@ -1,0 +1,119 @@
+@if (TotalPages > 0)
+{
+    <div class="flex items-center justify-between px-2">
+        <div class="flex-1 text-sm text-gray-700">
+            @if (!string.IsNullOrEmpty(InfoText))
+            {
+                @InfoText
+            }
+            else
+            {
+                <span>Trang @CurrentPage trong @TotalPages</span>
+            }
+        </div>
+        <div class="flex items-center space-x-2">
+            <button @onclick="OnFirstPage" disabled="@(CurrentPage == 1)" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-100 hover:text-gray-900 h-8 px-3">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+                <span class="ml-1 hidden sm:inline">Đầu</span>
+            </button>
+            
+            <button @onclick="OnPreviousPage" disabled="@(CurrentPage == 1)" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-100 hover:text-gray-900 h-8 px-3">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                <span class="ml-1 hidden sm:inline">Trước</span>
+            </button>
+
+            @foreach (var pageNum in GetPageNumbers())
+            {
+                @if (pageNum == -1)
+                {
+                    <span class="px-2 text-gray-500">...</span>
+                }
+                else
+                {
+                    <button @onclick="() => OnPageChange(pageNum)" class="@GetPageButtonClass(pageNum)">
+                        @pageNum
+                    </button>
+                }
+            }
+
+            <button @onclick="OnNextPage" disabled="@(CurrentPage == TotalPages)" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-100 hover:text-gray-900 h-8 px-3">
+                <span class="mr-1 hidden sm:inline">Sau</span>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+
+            <button @onclick="OnLastPage" disabled="@(CurrentPage == TotalPages)" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-white hover:bg-gray-100 hover:text-gray-900 h-8 px-3">
+                <span class="mr-1 hidden sm:inline">Cuối</span>
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int CurrentPage { get; set; } = 1;
+    [Parameter] public int TotalPages { get; set; }
+    [Parameter] public int MaxVisiblePages { get; set; } = 5;
+    [Parameter] public string? InfoText { get; set; }
+    [Parameter] public EventCallback<int> CurrentPageChanged { get; set; }
+
+    private async Task OnPageChange(int page)
+    {
+        if (page != CurrentPage && page >= 1 && page <= TotalPages)
+        {
+            await CurrentPageChanged.InvokeAsync(page);
+        }
+    }
+
+    private async Task OnFirstPage() => await OnPageChange(1);
+    private async Task OnLastPage() => await OnPageChange(TotalPages);
+    private async Task OnPreviousPage() => await OnPageChange(CurrentPage - 1);
+    private async Task OnNextPage() => await OnPageChange(CurrentPage + 1);
+
+    private List<int> GetPageNumbers()
+    {
+        var pages = new List<int>();
+        
+        if (TotalPages <= MaxVisiblePages)
+        {
+            for (int i = 1; i <= TotalPages; i++)
+                pages.Add(i);
+            return pages;
+        }
+
+        pages.Add(1);
+
+        var start = Math.Max(2, CurrentPage - 1);
+        var end = Math.Min(TotalPages - 1, CurrentPage + 1);
+
+        if (start > 2)
+            pages.Add(-1);
+
+        for (int i = start; i <= end; i++)
+            pages.Add(i);
+
+        if (end < TotalPages - 1)
+            pages.Add(-1);
+
+        pages.Add(TotalPages);
+
+        return pages;
+    }
+
+    private string GetPageButtonClass(int pageNum)
+    {
+        var baseClass = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 w-8";
+        
+        if (pageNum == CurrentPage)
+            return $"{baseClass} bg-blue-600 text-white hover:bg-blue-700";
+        
+        return $"{baseClass} border border-gray-300 bg-white hover:bg-gray-100 hover:text-gray-900";
+    }
+}
