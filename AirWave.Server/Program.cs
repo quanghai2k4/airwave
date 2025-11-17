@@ -55,6 +55,21 @@ try
     using (var scope = host.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AqiDbContext>();
+        
+        // Check if database was created with EnsureCreated() (no migrations history)
+        var canConnect = dbContext.Database.CanConnect();
+        var hasMigrationsTable = canConnect && dbContext.Database.GetAppliedMigrations().Any();
+        
+        if (canConnect && !hasMigrationsTable)
+        {
+            Log.Warning("Database exists but has no migration history. This database was likely created with EnsureCreated().");
+            Log.Warning("Deleting old database to ensure proper migration...");
+            
+            // Delete the old database file
+            dbContext.Database.EnsureDeleted();
+            Log.Information("Old database deleted. Creating new database with migrations...");
+        }
+        
         dbContext.Database.Migrate();
         Log.Information("Database migrations completed successfully");
     }
